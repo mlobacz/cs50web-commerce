@@ -1,3 +1,4 @@
 from django.contrib import admin
+from .models import Category, Listing, Comment, Bid, User
 
-# Register your models here.
+admin.site.register([Category, Listing, Comment, Bid, User])
