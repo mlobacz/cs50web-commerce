@@ -2,6 +2,30 @@
 
 {% block body %}
     <h2>Active Listings</h2>
-
-    TODO
+    <ul>
+        {% for listing in listings %}
+            <li>
+                <table>
+                    <tr>
+                        <th>Owner</th>
+                        <th>Title</th>
+                        <th>Description</th>
+                        <th>Current Price</th>
+                        <th>Image</th>
+                        <th>Category</th>
+                        <th>Created</th>
+                    </tr>
+                    <tr>
+                        <td>{{ listing.owner }}</td>
+                        <td>{{ listing.title }}</td>
+                        <td>{{ listing.description }}</td>
+                        <td>{{ listing.top_bid }}</td>
+                        <td>{{ listing.image_url }}</td>
+                        <td>{{ listing.category }}</td>
+                        <td>{{ listing.date_created }}</td>
+                    </tr>
+                </table>
+            </li>
+        {% endfor %}
+    </ul>
 {% endblock %}
