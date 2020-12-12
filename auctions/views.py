@@ -7,7 +7,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
 
-from auctions.models import Listing
+from auctions.models import Listing, Bid
 
 from .models import User
 
@@ -17,10 +17,18 @@ class ListingForm(ModelForm):
         model = Listing
         fields = ["title", "description", "starting_bid", "image_url", "category"]
 
+class BidForm(ModelForm):
+    class Meta:
+        model = Bid
+        fields = ["amount"]
 
 def index(request):
     # nest aggregate query and compare top_bid to starting_bid?
-    listings = Listing.objects.annotate(current_price=Max('bids__amount'))
+    # https://stackoverflow.com/questions/15867247/django-query-can-you-nest-annotations
+    # or rather https://docs.djangoproject.com/en/3.1/ref/models/expressions/#subquery-expressions
+    listings = Listing.objects.annotate(highest_bid=Max("bids__amount"))
+    for listing in listings:
+        listing.price = listing.highest_bid or listing.starting_bid
     return render(request, "auctions/index.html", {"listings": listings})
 
 
@@ -91,3 +99,25 @@ def create(request):
     else:
         form = ListingForm()
     return render(request, "auctions/create.html", {"form": form})
+
+
+def listing_view(request, listing_id):
+    listing = Listing.objects.get(pk=listing_id)
+    listing.price = listing.bids.aggregate(Max('amount'))["amount__max"] or listing.starting_bid
+    if request.method == "POST":
+        form = BidForm(request.POST)
+        form.instance.bidder = request.user
+        form.instance.listing = listing
+        if form.is_valid():
+            if float(form.cleaned_data["amount"]) <= float(listing.price):
+                # TODO: maybe create some custom exception and redirect to the same page with error message
+                raise Exception
+            form.save()
+            # TODO: redirect here to the same page but with message of success
+    else:
+        form = BidForm()
+    return render(
+        request,
+        "auctions/listing.html",
+        {"listing": listing, "form": form},
+    )

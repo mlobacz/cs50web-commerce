@@ -1,0 +1,31 @@
+{% extends "auctions/layout.html" %} {% block body %}
+<h2>{{ listing.title }}</h2>
+<table>
+    <tr>
+        <th>Owner</th>
+        <th>Title</th>
+        <th>Description</th>
+        <th>Price</th>
+        <th>Image</th>
+        <th>Category</th>
+        <th>Created</th>
+    </tr>
+    <tr>
+        <td>{{ listing.owner }}</td>
+        <td>
+            <a href="{% url 'listing' listing.pk %}">{{ listing.title }}</a>
+        </td>
+        <td>{{ listing.description }}</td>
+        <td>{{ listing.price }}</td>
+        <td>{{ listing.image_url }}</td>
+        <td>{{ listing.category }}</td>
+        <td>{{ listing.date_created }}</td>
+    </tr>
+    <form action="{% url 'listing' listing.pk %}" method="POST">
+        {% csrf_token %}
+        {{ form }}
+        <input type="submit" value="Bid">
+    </form>
+</table>
+
+{% endblock %}

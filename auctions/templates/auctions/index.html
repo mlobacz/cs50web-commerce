@@ -10,16 +10,16 @@
                         <th>Owner</th>
                         <th>Title</th>
                         <th>Description</th>
-                        <th>Current Price</th>
+                        <th>Price</th>
                         <th>Image</th>
                         <th>Category</th>
                         <th>Created</th>
                     </tr>
                     <tr>
                         <td>{{ listing.owner }}</td>
-                        <td>{{ listing.title }}</td>
+                        <td><a href="{% url 'listing' listing.pk %}">{{ listing.title }}</a></td>
                         <td>{{ listing.description }}</td>
-                        <td>{{ listing.top_bid }}</td>
+                        <td>{{ listing.price }}</td>
                         <td>{{ listing.image_url }}</td>
                         <td>{{ listing.category }}</td>
                         <td>{{ listing.date_created }}</td>
