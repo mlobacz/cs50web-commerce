@@ -3,6 +3,11 @@ from django.db import models
 from django.conf import settings
 
 
+class User(AbstractUser):
+    def __str__(self):
+        return f"{self.id}: {self.username}, {self.email}"
+
+
 class Category(models.Model):
     name = models.CharField(max_length=16)
 
@@ -20,7 +25,11 @@ class Listing(models.Model):
     starting_bid = models.DecimalField(max_digits=11, decimal_places=2)
     image_url = models.URLField(blank=True)
     category = models.ForeignKey(
-        Category, blank=True, on_delete=models.SET_NULL, null=True, related_name="listings"
+        Category,
+        blank=True,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="listings",
     )
 
     def __str__(self):
@@ -53,8 +62,9 @@ class Bid(models.Model):
         return f"{self.id}: {self.amount} bid by: {self.bidder}, created at {self.date_created}."
 
 
-class User(AbstractUser):
-    watching = models.ManyToManyField(Listing, blank=True, related_name="watched_by")
+class Watchlist(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    listing = models.ManyToManyField(Listing)
 
     def __str__(self):
-        return f"{self.id}: {self.username}, {self.email}"
+        return f"{self.user}'s watchlist"

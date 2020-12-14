@@ -4,8 +4,14 @@
 
     <h2>Register</h2>
 
-    {% if message %}
-        <div>{{ message }}</div>
+    {% if messages %}
+        <div>
+            {% for message in messages %}
+            <div class="alert {{ message.tags }}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
     {% endif %}
 
     <form action="{% url 'register' %}" method="post">

@@ -1,5 +1,14 @@
 {% extends "auctions/layout.html" %} {% block body %}
 <h2>{{ listing.title }}</h2>
+{% if messages %}
+<div>
+    {% for message in messages %}
+    <div class="alert {{ message.tags }}">
+        {{ message }}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
 <table>
     <tr>
         <th>Owner</th>
@@ -24,8 +33,10 @@
     <form action="{% url 'listing' listing.pk %}" method="POST">
         {% csrf_token %}
         {{ form }}
-        <input type="submit" value="Bid">
+        <input type="submit" name="bid" value="Bid">
     </form>
+    <a href="{% url 'watchlist_add' listing.pk %}" role="button">add to watchlist</a>
+
 </table>
 
 {% endblock %}
