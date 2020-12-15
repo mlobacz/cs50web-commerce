@@ -19,7 +19,7 @@
                         <td>{{ listing.owner }}</td>
                         <td><a href="{% url 'listing' listing.pk %}">{{ listing.title }}</a></td>
                         <td>{{ listing.description }}</td>
-                        <td>{{ listing.price }}</td>
+                        <td>{{ listing.price|floatformat:2 }}</td>
                         <td>{{ listing.image_url }}</td>
                         <td>{{ listing.category }}</td>
                         <td>{{ listing.date_created }}</td>
