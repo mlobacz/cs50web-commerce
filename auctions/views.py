@@ -107,7 +107,7 @@ def create(request):
 
 def listing_view(request, listing_id):
     """Renders a page for the specific listing. Allows user to make bid on a listing."""
-    listing = get_object_or_404(Listing, pk=1)
+    listing = get_object_or_404(Listing, pk=listing_id)
     listing.price = (
         listing.bids.aggregate(Max("amount"))["amount__max"] or listing.starting_bid
     )
