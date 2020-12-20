@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from django.test import TestCase
 from django.urls import reverse
+from django.contrib.auth import get_user, login
 
 from auctions.models import Listing, User
 
@@ -30,20 +31,6 @@ class IndexViewTests(TestCase):
             starting_bid=50.43,
         )
 
-    def test_html_fields(self):
-        """
-        Key HTML table headers
-        (owner, title, description, price, image_url, category, date_created), are returned.
-        """
-        response = self.client.get(reverse("index"))
-        self.assertInHTML("<th>Owner</th>", str(response.content))
-        self.assertInHTML("<th>Title</th>", str(response.content))
-        self.assertInHTML("<th>Description</th>", str(response.content))
-        self.assertInHTML("<th>Price</th>", str(response.content))
-        self.assertInHTML("<th>Image</th>", str(response.content))
-        self.assertInHTML("<th>Category</th>", str(response.content))
-        self.assertInHTML("<th>Created</th>", str(response.content))
-
     def test_number_of_listing_returned(self):
         """2 listings are returned."""
         response = self.client.get(reverse("index"))
@@ -53,6 +40,7 @@ class IndexViewTests(TestCase):
     def test_listings_starting_prices(self):
         """Listings are returned with their starting prices."""
         response = self.client.get(reverse("index"))
+        self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["listings"][0].price, Decimal("100.46"))
         self.assertEqual(response.context["listings"][1].price, Decimal("50.43"))
 
@@ -63,6 +51,7 @@ class IndexViewTests(TestCase):
         listing_1.bids.create(amount=200.32, bidder=user)
         listing_1.bids.create(amount=400.32, bidder=user)
         response = self.client.get(reverse("index"))
+        self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["listings"][0].price, Decimal("400.32"))
 
 
@@ -80,6 +69,7 @@ class TestLogInView(TestCase):
     def test_login_successful(self):
         """Users is authenticated and redirected to index page."""
         response = self.client.post(reverse("login"), self.credentials, follow=True)
+        self.assertEqual(response.status_code, 200)
         self.assertTrue(response.context["user"].is_authenticated)
         self.assertRedirects(response, reverse("index"))
 
@@ -88,6 +78,29 @@ class TestLogInView(TestCase):
         wrong_creds = {"username": "test_user", "password": "wrong_password"}
         response = self.client.post(reverse("login"), wrong_creds, follow=True)
         message = list(response.context.get("messages"))[0]
+        self.assertEqual(response.status_code, 200)
         self.assertFalse(response.context["user"].is_authenticated)
         self.assertEqual(message.tags, "alert-danger")
         self.assertEqual(message.message, "Invalid username and/or password.")
+
+
+class TestLogOutView(TestCase):
+    """
+    Tests for the logout view:
+        Logged user is logged out
+        404 is thrown if not logged user tries to access /logout url
+    """
+
+    def test_logout_of_logged_user(self):
+        """Logged user is logged out"""
+        self.credentials = {"username": "test_user", "password": "test_password"}
+        user, _ = User.objects.get_or_create(**self.credentials)
+        self.client.force_login(user=user)
+        response = self.client.get(reverse("logout"), follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context["user"].is_authenticated)
+
+    def test_logout_of_not_logged_user(self):
+        """Return 404 for not logged user logout"""
+        response = self.client.get(reverse("logout"), follow=True)
+        self.assertEqual(response.status_code, 404)
