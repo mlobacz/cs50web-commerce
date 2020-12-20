@@ -117,10 +117,16 @@ def listing_view(request, listing_id):
         form.instance.listing = listing
         if form.is_valid():
             if listing.bids.exists() and form.cleaned_data["amount"] <= listing.price:
-                messages.add_message(request, messages.ERROR, "Bid must be higher than the highest bid!")
+                messages.add_message(
+                    request, messages.ERROR, "Bid must be higher than the highest bid!"
+                )
                 return redirect("listing", listing_id=listing_id)
             if form.cleaned_data["amount"] < listing.price:
-                messages.add_message(request, messages.ERROR, "Bid must be higher than the starting price!")
+                messages.add_message(
+                    request,
+                    messages.ERROR,
+                    "Bid must be higher than the starting price!",
+                )
                 return redirect("listing", listing_id=listing_id)
             messages.add_message(request, messages.SUCCESS, "Placed bid!")
             form.save()
@@ -130,12 +136,18 @@ def listing_view(request, listing_id):
     return render(
         request,
         "auctions/listing.html",
-        {"listing": listing, "form": form},
+        {
+            "listing": listing,
+            "form": form,
+            "watched": Watchlist.objects.filter(
+                user=request.user, listing=listing_id
+            ).exists(),
+        },
     )
 
 
 @login_required
-def watchlist_add(request, listing_id):
+def watch(request, listing_id):
     listing_to_watch = get_object_or_404(Listing, pk=listing_id)
 
     if Watchlist.objects.filter(user=request.user, listing=listing_id).exists():
@@ -149,3 +161,22 @@ def watchlist_add(request, listing_id):
     messages.add_message(request, messages.SUCCESS, "Added to the watchlist.")
 
     return redirect("listing", listing_id=listing_id)
+
+
+@login_required
+def unwatch(request, listing_id):
+    listing_to_unwatch = get_object_or_404(Listing, pk=listing_id)
+    watchlist = Watchlist.objects.get(user=request.user)
+    watchlist.listing.remove(listing_to_unwatch)
+    messages.add_message(request, messages.SUCCESS, "Removed from watchlist.")
+    return redirect("listing", listing_id=listing_id)
+
+
+@login_required
+def watchlist_view(request):
+    watchlist = Listing.objects.filter(watchlist__user=request.user).annotate(
+        highest_bid=Max("bids__amount")
+    )
+    for listing in watchlist:
+        listing.price = listing.highest_bid or listing.starting_bid
+    return render(request, "auctions/watchlist.html", {"watchlist": watchlist})

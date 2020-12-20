@@ -1,0 +1,38 @@
+{% extends "auctions/layout.html" %} 
+{% block body %}
+
+<h2>Your watchlist</h2>
+{% if watchlist %}
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Owner</th>
+                <th>Title</th>
+                <th>Description</th>
+                <th>Price</th>
+                <th>Image</th>
+                <th>Category</th>
+                <th>Created</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for listing in watchlist %}
+            <tr
+                class="clickable"
+                onclick="window.location='{% url 'listing' listing.pk %}'"
+            >
+                <td>{{ listing.owner.username }}</td>
+                <td>{{ listing.title }}</td>
+                <td>{{ listing.description }}</td>
+                <td>{{ listing.price|floatformat:2 }}</td>
+                <td>{{ listing.image_url }}</td>
+                <td>{{ listing.category }}</td>
+                <td>{{ listing.date_created }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>Your watchlist is empty.</p>
+{% endif %}
+{% endblock %}

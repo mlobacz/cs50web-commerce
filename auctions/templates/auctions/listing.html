@@ -1,42 +1,56 @@
-{% extends "auctions/layout.html" %} {% block body %}
+{% extends "auctions/layout.html" %} 
+{% block body %}
+{% load crispy_forms_tags %}
+
 <h2>{{ listing.title }}</h2>
 {% if messages %}
 <div>
     {% for message in messages %}
-    <div class="alert {{ message.tags }}">
-        {{ message }}
-    </div>
+    <div class="alert {{ message.tags }}">{{ message }}</div>
     {% endfor %}
 </div>
 {% endif %}
-<table>
-    <tr>
-        <th>Owner</th>
-        <th>Title</th>
-        <th>Description</th>
-        <th>Price</th>
-        <th>Image</th>
-        <th>Category</th>
-        <th>Created</th>
-    </tr>
-    <tr>
-        <td>{{ listing.owner }}</td>
-        <td>
-            <a href="{% url 'listing' listing.pk %}">{{ listing.title }}</a>
-        </td>
-        <td>{{ listing.description }}</td>
-        <td>{{ listing.price|floatformat:2 }}</td>
-        <td>{{ listing.image_url }}</td>
-        <td>{{ listing.category }}</td>
-        <td>{{ listing.date_created }}</td>
-    </tr>
-    <form action="{% url 'listing' listing.pk %}" method="POST">
-        {% csrf_token %}
-        {{ form }}
-        <input type="submit" name="bid" value="Bid">
-    </form>
-    <a href="{% url 'watchlist_add' listing.pk %}" role="button">add to watchlist</a>
-
+{% if user.is_authenticated %}
+    {% if watched %}
+        <a href="{% url 'unwatch' listing.pk %}" role="button" class="btn btn-secondary btn-sm"
+            >unwatch</a
+        >
+        {% else %}
+        <a href="{% url 'watch' listing.pk %}" role="button" class="btn btn-secondary btn-sm"
+            >watch</a
+        >
+    {% endif %}
+{% endif %}
+<table class="table">
+    <thead>
+        <tr>
+            <th>Owner</th>
+            <th>Title</th>
+            <th>Description</th>
+            <th>Price</th>
+            <th>Image</th>
+            <th>Category</th>
+            <th>Created</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>{{ listing.owner.username }}</td>
+            <td>{{ listing.title }}</td>
+            <td>{{ listing.description }}</td>
+            <td>{{ listing.price|floatformat:2 }}</td>
+            <td>{{ listing.image_url }}</td>
+            <td>{{ listing.category }}</td>
+            <td>{{ listing.date_created }}</td>
+        </tr>
+    </tbody>
 </table>
+{% if user.is_authenticated %}
+<form action="{% url 'listing' listing.pk %}" method="POST">
+    {% csrf_token %} 
+    {{ form|crispy }}
+    <input type="submit" class="btn btn-primary" value="Place bid" />
+</form>
+{% endif %}
 
 {% endblock %}

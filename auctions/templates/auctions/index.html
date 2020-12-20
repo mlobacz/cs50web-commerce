@@ -1,31 +1,32 @@
-{% extends "auctions/layout.html" %}
-
-{% block body %}
-    <h2>Active Listings</h2>
-    <ul>
+{% extends "auctions/layout.html" %} {% block body %}
+<h2>Active Listings</h2>
+<table class="table table-hover">
+    <thead>
+        <tr>
+            <th>Owner</th>
+            <th>Title</th>
+            <th>Description</th>
+            <th>Price</th>
+            <th>Image</th>
+            <th>Category</th>
+            <th>Created</th>
+        </tr>
+    </thead>
+    <tbody>
         {% for listing in listings %}
-            <li>
-                <table>
-                    <tr>
-                        <th>Owner</th>
-                        <th>Title</th>
-                        <th>Description</th>
-                        <th>Price</th>
-                        <th>Image</th>
-                        <th>Category</th>
-                        <th>Created</th>
-                    </tr>
-                    <tr>
-                        <td>{{ listing.owner }}</td>
-                        <td><a href="{% url 'listing' listing.pk %}">{{ listing.title }}</a></td>
-                        <td>{{ listing.description }}</td>
-                        <td>{{ listing.price|floatformat:2 }}</td>
-                        <td>{{ listing.image_url }}</td>
-                        <td>{{ listing.category }}</td>
-                        <td>{{ listing.date_created }}</td>
-                    </tr>
-                </table>
-            </li>
+        <tr
+            class="clickable"
+            onclick="window.location='{% url 'listing' listing.pk %}'"
+        >
+            <td>{{ listing.owner.username }}</td>
+            <td>{{ listing.title }}</td>
+            <td>{{ listing.description }}</td>
+            <td>{{ listing.price|floatformat:2 }}</td>
+            <td>{{ listing.image_url }}</td>
+            <td>{{ listing.category }}</td>
+            <td>{{ listing.date_created }}</td>
+        </tr>
         {% endfor %}
-    </ul>
+    </tbody>
+</table>
 {% endblock %}

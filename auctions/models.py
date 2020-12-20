@@ -63,7 +63,7 @@ class Bid(models.Model):
 
 
 class Watchlist(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="watchlist")
     listing = models.ManyToManyField(Listing)
 
     def __str__(self):

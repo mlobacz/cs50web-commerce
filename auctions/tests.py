@@ -65,6 +65,7 @@ class IndexViewTests(TestCase):
         response = self.client.get(reverse("index"))
         self.assertEqual(response.context["listings"][0].price, Decimal("400.32"))
 
+
 class TestLogInView(TestCase):
     """
     Tests for the login view:
@@ -73,12 +74,9 @@ class TestLogInView(TestCase):
     """
 
     def setUp(self):
-        self.credentials = {
-            "username": "test_user",
-            "password": "test_password"
-        }
+        self.credentials = {"username": "test_user", "password": "test_password"}
         User.objects.create_user(**self.credentials)
-        
+
     def test_login_successful(self):
         """Users is authenticated and redirected to index page."""
         response = self.client.post(reverse("login"), self.credentials, follow=True)
@@ -87,10 +85,7 @@ class TestLogInView(TestCase):
 
     def test_login_fails(self):
         """User is not authenticated and is presented appropriate message."""
-        wrong_creds = {
-            "username": "test_user",
-            "password": "wrong_password"
-        }
+        wrong_creds = {"username": "test_user", "password": "wrong_password"}
         response = self.client.post(reverse("login"), wrong_creds, follow=True)
         message = list(response.context.get("messages"))[0]
         self.assertFalse(response.context["user"].is_authenticated)
