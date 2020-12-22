@@ -112,6 +112,7 @@ def listing_view(request, listing_id):
         listing.bids.aggregate(Max("amount"))["amount__max"] or listing.starting_bid
     )
     if request.method == "POST":
+        # move all of this to separate function?
         form = BidForm(request.POST)
         form.instance.bidder = request.user
         form.instance.listing = listing
