@@ -1,6 +1,8 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.conf import settings
+from django.utils.translation import gettext_lazy as _
+from model_utils import Choices
 
 
 class User(AbstractUser):
@@ -8,14 +10,17 @@ class User(AbstractUser):
         return f"{self.id}: {self.username}, {self.email}"
 
 
-class Category(models.Model):
-    name = models.CharField(max_length=16)
-
-    def __str__(self):
-        return f"{self.name}"
-
-
 class Listing(models.Model):
+    CATEGORY = Choices(
+        ("books", _("Books")),
+        ("electronics", _("Electronics")),
+        ("fashion", _("Fashion")),
+        ("home", _("Home")),
+        ("music", _("Music & Instruments")),
+        ("other", _("Other (undefined) category")),
+        ("sport", _("Sports & Recreation")),
+        ("toys", _("Toys")),
+    )
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="listings"
     )
@@ -24,16 +29,14 @@ class Listing(models.Model):
     description = models.TextField()
     starting_bid = models.DecimalField(max_digits=11, decimal_places=2)
     image_url = models.URLField(blank=True)
-    category = models.ForeignKey(
-        Category,
-        blank=True,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name="listings",
+    category = models.CharField(
+        max_length=16,
+        choices = CATEGORY,
+        default = CATEGORY.other,
     )
 
     def __str__(self):
-        return f'{self.id}: "{self.title}", created at {self.date_created}.'
+        return f"{self.id}: \"{self.title}\", created at {self.date_created}."
 
 
 class Comment(models.Model):

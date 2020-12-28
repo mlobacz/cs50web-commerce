@@ -60,6 +60,7 @@ def login_view(request):
     else:
         return render(request, "auctions/login.html")
 
+
 @login_required
 def logout_view(request):
     logout(request)
@@ -126,7 +127,7 @@ def listing_view(request, listing_id):
                 messages.add_message(
                     request,
                     messages.ERROR,
-                    "Bid must be higher than the starting price!",
+                    "Bid must be higher or equal to the starting price!",
                 )
                 return redirect("listing", listing_id=listing_id)
             messages.add_message(request, messages.SUCCESS, "Placed bid!")
@@ -139,10 +140,12 @@ def listing_view(request, listing_id):
         "auctions/listing.html",
         {
             "listing": listing,
-            "form": form,
+            "form": form if request.user.is_authenticated else None,
             "watched": Watchlist.objects.filter(
                 user=request.user, listing=listing_id
-            ).exists(),
+            ).exists()
+            if request.user.is_authenticated
+            else None,
         },
     )
 
