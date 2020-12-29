@@ -1,5 +1,5 @@
 {% extends "auctions/layout.html" %} {% block body %}
-<h2>Active Listings</h2>
+<h2>Listings in {{ category_name }}</h2>
 <table class="table table-hover">
     <thead>
         <tr>
@@ -8,7 +8,6 @@
             <th>Description</th>
             <th>Price</th>
             <th>Image</th>
-            <th>Category</th>
             <th>Created</th>
         </tr>
     </thead>

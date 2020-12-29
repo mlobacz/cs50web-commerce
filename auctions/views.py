@@ -152,6 +152,7 @@ def listing_view(request, listing_id):
 
 @login_required
 def watch(request, listing_id):
+    """Add listing to watchlist."""
     listing_to_watch = get_object_or_404(Listing, pk=listing_id)
 
     if Watchlist.objects.filter(user=request.user, listing=listing_id).exists():
@@ -169,6 +170,7 @@ def watch(request, listing_id):
 
 @login_required
 def unwatch(request, listing_id):
+    """Remove listing from watchlist."""
     listing_to_unwatch = get_object_or_404(Listing, pk=listing_id)
     watchlist = Watchlist.objects.get(user=request.user)
     watchlist.listing.remove(listing_to_unwatch)
@@ -178,9 +180,28 @@ def unwatch(request, listing_id):
 
 @login_required
 def watchlist_view(request):
+    """Show user's watchlist"""
     watchlist = Listing.objects.filter(watchlist__user=request.user).annotate(
         highest_bid=Max("bids__amount")
     )
     for listing in watchlist:
         listing.price = listing.highest_bid or listing.starting_bid
     return render(request, "auctions/watchlist.html", {"watchlist": watchlist})
+
+
+def categories_view(request):
+    """Display list of categories (user representation)"""
+    return render(
+        request, "auctions/categories.html", {"categories": Listing.CATEGORY.__iter__}
+    )
+
+
+def category(request, category_name):
+    """Show listings in the particular category"""
+    listings = Listing.objects.filter(category=category_name)
+    category_name = Listing.CATEGORY.__getitem__(category_name)
+    return render(
+        request,
+        "auctions/category.html",
+        {"category_name": category_name, "listings": listings},
+    )

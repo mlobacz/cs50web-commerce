@@ -6,7 +6,7 @@ from django.contrib.auth import get_user
 from django.http import Http404
 
 
-from auctions.models import Listing, User
+from auctions.models import Listing, User, Watchlist
 from auctions.views import ListingForm, BidForm
 
 
@@ -344,7 +344,137 @@ class TestListingView(TestCase):
         except IndexError as error:
             raise AssertionError("No message was passed to the response.") from error
         self.assertEqual(message.tags, "alert-danger")
-        self.assertEqual(message.message, "Bid must be higher or equal to the starting price!")
+        self.assertEqual(
+            message.message, "Bid must be higher or equal to the starting price!"
+        )
         self.assertRedirects(response, reverse("listing", kwargs={"listing_id": 1}))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["listing"].price, Decimal("100.46"))
+
+
+class TestWatchlist(TestCase):
+    """
+    Tests for the watchlist related functionalities:
+        Listing is added to a watchlist.
+        Listing is removed from a watchlist.
+        Warning message is flashed if on attempt to watch already watched listing.
+        Watchlist view returns watched listing.
+    """
+
+    def setUp(self):
+        user, _ = User.objects.get_or_create(username="d_bowie")
+        Listing.objects.create(
+            owner=user,
+            title="ziggy",
+            description="stardust",
+            starting_bid=100.46,
+        )
+        Listing.objects.create(
+            owner=user,
+            title="space",
+            description="oddity",
+            starting_bid=50.43,
+        )
+        self.client.force_login(user=user)
+
+    def test_listing_added_to_watchlist(self):
+        """User can add listing to watchlist."""
+        response = self.client.post(
+            reverse("watch", kwargs={"listing_id": 1}), follow=True
+        )
+        try:
+            message = list(response.context.get("messages"))[0]
+        except IndexError as error:
+            raise AssertionError("No message was passed to the response.") from error
+        self.assertEqual(message.tags, "alert-success")
+        self.assertEqual(message.message, "Added to the watchlist.")
+        self.assertEqual(
+            Watchlist.objects.filter(user=get_user(self.client), listing=1).count(), 1
+        )
+
+    def test_cant_add_to_watchlist_twice(self):
+        """User cannot add the same object to watchlist twice."""
+        watchlist, _ = Watchlist.objects.get_or_create(user=get_user(self.client))
+        watchlist.listing.add(Listing.objects.get(pk=1))
+        response = self.client.post(
+            reverse("watch", kwargs={"listing_id": 1}), follow=True
+        )
+        try:
+            message = list(response.context.get("messages"))[0]
+        except IndexError as error:
+            raise AssertionError("No message was passed to the response.") from error
+        self.assertEqual(message.tags, "alert-warning")
+        self.assertEqual(message.message, "This is already on your watchlist.")
+        self.assertEqual(
+            Watchlist.objects.filter(user=get_user(self.client), listing=1).count(), 1
+        )
+
+    def test_listing_removed_from_watchlist(self):
+        """User can remove listing from watchlist."""
+        watchlist, _ = Watchlist.objects.get_or_create(user=get_user(self.client))
+        watchlist.listing.add(Listing.objects.get(pk=1))
+        response = self.client.post(
+            reverse("unwatch", kwargs={"listing_id": 1}), follow=True
+        )
+        try:
+            message = list(response.context.get("messages"))[0]
+        except IndexError as error:
+            raise AssertionError("No message was passed to the response.") from error
+        self.assertEqual(message.tags, "alert-success")
+        self.assertEqual(message.message, "Removed from watchlist.")
+        self.assertEqual(
+            Watchlist.objects.filter(user=get_user(self.client), listing=1).count(), 0
+        )
+
+    def test_number_of_watched_listings(self):
+        """2 listings are returned to the users watchlist."""
+        watchlist, _ = Watchlist.objects.get_or_create(user=get_user(self.client))
+        watchlist.listing.add(Listing.objects.get(pk=1))
+        watchlist.listing.add(Listing.objects.get(pk=2))
+        response = self.client.get(reverse("watchlist"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["watchlist"].count(), 2)
+
+
+class TestCategories(TestCase):
+    """
+    Tests for categories related functionalities:
+        List of categories names is returned from categories view.
+    """
+
+    def test_categories_list(self):
+        """Full list of categories names (user represenation) is returned from the categories view."""
+        categories = Listing.CATEGORY.__iter__
+        response = self.client.get(reverse("categories"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["categories"], categories)
+
+    def test_category_listings(self):
+        """Listings with given category are returned to category details."""
+        user, _ = User.objects.get_or_create(username="d_bowie")
+        Listing.objects.create(
+            owner=user,
+            title="ziggy",
+            description="stardust",
+            starting_bid=100.46,
+            category="music",
+        )
+        Listing.objects.create(
+            owner=user,
+            title="space",
+            description="oddity",
+            starting_bid=50.43,
+            category="music",
+        )
+        Listing.objects.create(
+            owner=user,
+            title="dune",
+            description="muad'dib",
+            starting_bid=21.37,
+            category="books",
+        )
+        response = self.client.get(
+            reverse("category", kwargs={"category_name": "music"})
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["listings"].count(), 2)
