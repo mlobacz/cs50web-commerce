@@ -7,7 +7,7 @@ from django.http import Http404
 
 
 from auctions.models import Listing, User, Watchlist
-from auctions.views import ListingForm, BidForm
+from auctions.views import ListingForm, BidForm, CommentForm
 
 
 class IndexViewTests(TestCase):
@@ -245,10 +245,10 @@ class TestListingView(TestCase):
             category="music",
         )
 
-    def test_404_on_incorrect_listing_id(self):
+    def test_404_on_incorrect_pk(self):
         """404 raised for id larger than objects count."""
         listings_count = Listing.objects.count()
-        self.client.get(reverse("listing", kwargs={"listing_id": listings_count + 1}))
+        self.client.get(reverse("listing", kwargs={"pk": listings_count + 1}))
         self.assertRaisesMessage(Http404, "No Listing matches the given query.")
 
     def test_listing_object_is_returned_with_all_fields(self):
@@ -256,7 +256,7 @@ class TestListingView(TestCase):
         Listing object is returned with:
         title, description, price, image_url, category
         """
-        response = self.client.get(reverse("listing", kwargs={"listing_id": 1}))
+        response = self.client.get(reverse("listing", kwargs={"pk": 1}))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["listing"].title, "ziggy")
         self.assertEqual(response.context["listing"].description, "stardust")
@@ -268,18 +268,18 @@ class TestListingView(TestCase):
         """
         Bid form is returned as "None" for the not authenticated user.
         """
-        response = self.client.get(reverse("listing", kwargs={"listing_id": 1}))
+        response = self.client.get(reverse("listing", kwargs={"pk": 1}))
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context["form"], None)
+        self.assertEqual(response.context["bid_form"], None)
 
     def test_bid_form_for_authenticated_user(self):
         """
         Instance of BidForm is returned for the authenticated user.
         """
         self.client.force_login(user=User.objects.get(username="d_bowie"))
-        response = self.client.get(reverse("listing", kwargs={"listing_id": 1}))
+        response = self.client.get(reverse("listing", kwargs={"pk": 1}))
         self.assertEqual(response.status_code, 200)
-        self.assertIsInstance(response.context["form"], BidForm)
+        self.assertIsInstance(response.context["bid_form"], BidForm)
 
     def test_user_can_make_a_bid(self):
         """
@@ -288,7 +288,7 @@ class TestListingView(TestCase):
         user, _ = User.objects.get_or_create(username="r_d_james")
         self.client.force_login(user=user)
         response = self.client.post(
-            reverse("listing", kwargs={"listing_id": 1}),
+            reverse("listing_bid", kwargs={"pk": 1}),
             {"amount": 400.32},
             follow=True,
         )
@@ -313,7 +313,7 @@ class TestListingView(TestCase):
 
         self.client.force_login(user=user)
         response = self.client.post(
-            reverse("listing", kwargs={"listing_id": 1}),
+            reverse("listing_bid", kwargs={"pk": 1}),
             {"amount": 2},
             follow=True,
         )
@@ -323,7 +323,7 @@ class TestListingView(TestCase):
             raise AssertionError("No message was passed to the response.") from error
         self.assertEqual(message.tags, "alert-danger")
         self.assertEqual(message.message, "Bid must be higher than the highest bid!")
-        self.assertRedirects(response, reverse("listing", kwargs={"listing_id": 1}))
+        self.assertRedirects(response, reverse("listing", kwargs={"pk": 1}))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["listing"].price, Decimal("251.32"))
 
@@ -335,7 +335,7 @@ class TestListingView(TestCase):
         user, _ = User.objects.get_or_create(username="r_d_james")
         self.client.force_login(user=user)
         response = self.client.post(
-            reverse("listing", kwargs={"listing_id": 1}),
+            reverse("listing_bid", kwargs={"pk": 1}),
             {"amount": 2},
             follow=True,
         )
@@ -347,9 +347,41 @@ class TestListingView(TestCase):
         self.assertEqual(
             message.message, "Bid must be higher or equal to the starting price!"
         )
-        self.assertRedirects(response, reverse("listing", kwargs={"listing_id": 1}))
+        self.assertRedirects(response, reverse("listing", kwargs={"pk": 1}))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["listing"].price, Decimal("100.46"))
+
+    def test_no_comment_form_for_not_authenticated_user(self):
+        """
+        Comment form is returned as "None" for the not authenticated user.
+        """
+        response = self.client.get(reverse("listing", kwargs={"pk": 1}))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["comment_form"], None)
+
+    def test_comment_form_for_authenticated_user(self):
+        """
+        Instance of CommentForm is returned for the authenticated user.
+        """
+        self.client.force_login(user=User.objects.get(username="d_bowie"))
+        response = self.client.get(reverse("listing", kwargs={"pk": 1}))
+        self.assertEqual(response.status_code, 200)
+        self.assertIsInstance(response.context["comment_form"], CommentForm)
+
+    def test_user_can_add_comment(self):
+        """
+        User can add a comment
+        """
+        user, _ = User.objects.get_or_create(username="r_d_james")
+        self.client.force_login(user=user)
+        response = self.client.post(
+            reverse("listing_comment", kwargs={"pk": 1}),
+            {"content": "test_comment"},
+            follow=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["comments"].count(), 1)
+        self.assertEqual(response.context["comments"][0].content, "test_comment")
 
 
 class TestWatchlist(TestCase):
@@ -379,9 +411,7 @@ class TestWatchlist(TestCase):
 
     def test_listing_added_to_watchlist(self):
         """User can add listing to watchlist."""
-        response = self.client.post(
-            reverse("watch", kwargs={"listing_id": 1}), follow=True
-        )
+        response = self.client.post(reverse("watch", kwargs={"pk": 1}), follow=True)
         try:
             message = list(response.context.get("messages"))[0]
         except IndexError as error:
@@ -396,9 +426,7 @@ class TestWatchlist(TestCase):
         """User cannot add the same object to watchlist twice."""
         watchlist, _ = Watchlist.objects.get_or_create(user=get_user(self.client))
         watchlist.listing.add(Listing.objects.get(pk=1))
-        response = self.client.post(
-            reverse("watch", kwargs={"listing_id": 1}), follow=True
-        )
+        response = self.client.post(reverse("watch", kwargs={"pk": 1}), follow=True)
         try:
             message = list(response.context.get("messages"))[0]
         except IndexError as error:
@@ -413,9 +441,7 @@ class TestWatchlist(TestCase):
         """User can remove listing from watchlist."""
         watchlist, _ = Watchlist.objects.get_or_create(user=get_user(self.client))
         watchlist.listing.add(Listing.objects.get(pk=1))
-        response = self.client.post(
-            reverse("unwatch", kwargs={"listing_id": 1}), follow=True
-        )
+        response = self.client.post(reverse("unwatch", kwargs={"pk": 1}), follow=True)
         try:
             message = list(response.context.get("messages"))[0]
         except IndexError as error:

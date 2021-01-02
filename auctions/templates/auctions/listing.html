@@ -45,11 +45,25 @@
         </tr>
     </tbody>
 </table>
-{% if form %}
-<form action="{% url 'listing' listing.pk %}" method="POST">
+{% if bid_form %}
+<form action="{% url 'listing_bid' listing.pk %}" method="POST">
     {% csrf_token %} 
-    {{ form|crispy }}
+    {{ bid_form|crispy }}
     <input type="submit" class="btn btn-primary" value="Place bid" />
+</form>
+{% endif %}
+
+{% if comments %}
+{% for comment in comments %}
+<p>{{ comment.content }}</p>
+{% endfor %}
+{% endif %}
+
+{% if comment_form %}
+<form action="{% url 'listing_comment' listing.pk %}" method="POST">
+    {% csrf_token %} 
+    {{ comment_form|crispy }}
+    <input type="submit" class="btn btn-primary" value="Comment" />
 </form>
 {% endif %}
 

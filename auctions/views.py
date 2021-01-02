@@ -7,8 +7,9 @@ from django.forms import ModelForm
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.views.generic import DetailView, FormView
 
-from auctions.models import Bid, Listing, Watchlist
+from auctions.models import Bid, Listing, Watchlist, Comment
 
 from .models import User
 
@@ -27,6 +28,97 @@ class BidForm(ModelForm):
     class Meta:
         model = Bid
         fields = ["amount"]
+
+
+class CommentForm(ModelForm):
+    """Form used to add a comment."""
+
+    class Meta:
+        model = Comment
+        fields = ["content"]
+
+
+class ListingView(DetailView):
+    """Renders a page for the specific listing."""
+
+    model = Listing
+    template_name = "auctions/listing.html"
+
+    def _get_listing(self):
+        listing = self.get_object()
+        listing.price = (
+            listing.bids.aggregate(Max("amount"))["amount__max"] or listing.starting_bid
+        )
+        return listing
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        listing = self._get_listing()
+        context["watched"] = (
+            Watchlist.objects.filter(user=self.request.user, listing=listing).exists()
+            if self.request.user.is_authenticated
+            else None
+        )
+        context["bid_form"] = BidForm() if self.request.user.is_authenticated else None
+        context["comments"] = Comment.objects.filter(listing=listing)
+        context["comment_form"] = (
+            CommentForm() if self.request.user.is_authenticated else None
+        )
+        context["listing"] = listing
+        return context
+
+
+class BidFormView(FormView):
+    """Handles the bidding process."""
+
+    form_class = BidForm
+    template_name = "auctions/listing.html"
+
+    def get_success_url(self):
+        return reverse("listing", kwargs=self.kwargs)
+
+    def _get_listing(self):
+        listing = get_object_or_404(Listing, pk=self.kwargs["pk"])
+        listing.price = (
+            listing.bids.aggregate(Max("amount"))["amount__max"] or listing.starting_bid
+        )
+        return listing
+
+    def form_valid(self, form):
+        form.instance.bidder = self.request.user
+        listing = self._get_listing()
+        form.instance.listing = listing
+        if listing.bids.exists() and form.cleaned_data["amount"] <= listing.price:
+            messages.add_message(
+                self.request, messages.ERROR, "Bid must be higher than the highest bid!"
+            )
+            return redirect("listing", pk=self.kwargs["pk"])
+        if form.cleaned_data["amount"] < listing.price:
+            messages.add_message(
+                self.request,
+                messages.ERROR,
+                "Bid must be higher or equal to the starting price!",
+            )
+            return redirect("listing", pk=self.kwargs["pk"])
+        messages.add_message(self.request, messages.SUCCESS, "Placed bid!")
+        form.save()
+        return redirect("listing", pk=self.kwargs["pk"])
+
+
+class CommentFormView(FormView):
+    """Handles adding the comments."""
+
+    form_class = CommentForm
+    template_name = "auctions/listing.html"
+
+    def get_success_url(self):
+        return reverse("listing", kwargs=self.kwargs)
+
+    def form_valid(self, form):
+        form.instance.author = self.request.user
+        form.instance.listing = get_object_or_404(Listing, pk=self.kwargs["pk"])
+        form.save()
+        return redirect("listing", pk=self.kwargs["pk"])
 
 
 def index(request):
@@ -106,76 +198,32 @@ def create(request):
     return render(request, "auctions/create.html", {"form": form})
 
 
-def listing_view(request, listing_id):
-    """Renders a page for the specific listing. Allows user to make bid on a listing."""
-    listing = get_object_or_404(Listing, pk=listing_id)
-    listing.price = (
-        listing.bids.aggregate(Max("amount"))["amount__max"] or listing.starting_bid
-    )
-    if request.method == "POST":
-        # move all of this to separate function?
-        form = BidForm(request.POST)
-        form.instance.bidder = request.user
-        form.instance.listing = listing
-        if form.is_valid():
-            if listing.bids.exists() and form.cleaned_data["amount"] <= listing.price:
-                messages.add_message(
-                    request, messages.ERROR, "Bid must be higher than the highest bid!"
-                )
-                return redirect("listing", listing_id=listing_id)
-            if form.cleaned_data["amount"] < listing.price:
-                messages.add_message(
-                    request,
-                    messages.ERROR,
-                    "Bid must be higher or equal to the starting price!",
-                )
-                return redirect("listing", listing_id=listing_id)
-            messages.add_message(request, messages.SUCCESS, "Placed bid!")
-            form.save()
-            return redirect("listing", listing_id=listing_id)
-    else:
-        form = BidForm()
-    return render(
-        request,
-        "auctions/listing.html",
-        {
-            "listing": listing,
-            "form": form if request.user.is_authenticated else None,
-            "watched": Watchlist.objects.filter(
-                user=request.user, listing=listing_id
-            ).exists()
-            if request.user.is_authenticated
-            else None,
-        },
-    )
-
-
 @login_required
-def watch(request, listing_id):
+def watch(request, pk):
     """Add listing to watchlist."""
-    listing_to_watch = get_object_or_404(Listing, pk=listing_id)
+    listing_to_watch = get_object_or_404(Listing, pk=pk)
 
-    if Watchlist.objects.filter(user=request.user, listing=listing_id).exists():
+    if Watchlist.objects.filter(user=request.user, listing=pk).exists():
         messages.add_message(
             request, messages.WARNING, "This is already on your watchlist."
         )
-        return redirect("listing", listing_id=listing_id)
+        return redirect("listing", pk=pk)
 
     watchlist, _ = Watchlist.objects.get_or_create(user=request.user)
     watchlist.listing.add(listing_to_watch)
     messages.add_message(request, messages.SUCCESS, "Added to the watchlist.")
 
-    return redirect("listing", listing_id=listing_id)
+    return redirect("listing", pk=pk)
 
 
 @login_required
-def unwatch(request, listing_id):
+def unwatch(request, pk):
     """Remove listing from watchlist."""
-    listing_to_unwatch = get_object_or_404(Listing, pk=listing_id)
+    listing_to_unwatch = get_object_or_404(Listing, pk=pk)
     watchlist = Watchlist.objects.get(user=request.user)
     watchlist.listing.remove(listing_to_unwatch)
     messages.add_message(request, messages.SUCCESS, "Removed from watchlist.")
-    return redirect("listing", listing_id=listing_id)
+    return redirect("listing", pk=pk)
 
 
 @login_required
