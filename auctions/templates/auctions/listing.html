@@ -21,6 +21,9 @@
         >
     {% endif %}
 {% endif %}
+{% if winner %}
+<p>Congratulation, you won this auction!</p>
+{% endif %}
 <table class="table">
     <thead>
         <tr>
@@ -40,13 +43,13 @@
             <td>{{ listing.description }}</td>
             <td>{{ listing.price|floatformat:2 }}</td>
             <td>{{ listing.image_url }}</td>
-            <td>{{ listing.category }}</td>
+            <td>{{ listing.category_name }}</td>
             <td>{{ listing.date_created }}</td>
         </tr>
     </tbody>
 </table>
 {% if bid_form %}
-<form action="{% url 'listing_bid' listing.pk %}" method="POST">
+<form action="{% url 'bid' listing.pk %}" method="POST">
     {% csrf_token %} 
     {{ bid_form|crispy }}
     <input type="submit" class="btn btn-primary" value="Place bid" />
@@ -60,11 +63,18 @@
 {% endif %}
 
 {% if comment_form %}
-<form action="{% url 'listing_comment' listing.pk %}" method="POST">
+<form action="{% url 'comment' listing.pk %}" method="POST">
     {% csrf_token %} 
     {{ comment_form|crispy }}
     <input type="submit" class="btn btn-primary" value="Comment" />
 </form>
 {% endif %}
+
+{% if owner and listing.active %}
+<a href="{% url 'close' listing.pk %}" role="button" class="btn btn-secondary btn-sm"
+    >Close</a
+>
+{% endif %}
+
 
 {% endblock %}

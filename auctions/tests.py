@@ -288,7 +288,7 @@ class TestListingView(TestCase):
         user, _ = User.objects.get_or_create(username="r_d_james")
         self.client.force_login(user=user)
         response = self.client.post(
-            reverse("listing_bid", kwargs={"pk": 1}),
+            reverse("bid", kwargs={"pk": 1}),
             {"amount": 400.32},
             follow=True,
         )
@@ -313,7 +313,7 @@ class TestListingView(TestCase):
 
         self.client.force_login(user=user)
         response = self.client.post(
-            reverse("listing_bid", kwargs={"pk": 1}),
+            reverse("bid", kwargs={"pk": 1}),
             {"amount": 2},
             follow=True,
         )
@@ -335,7 +335,7 @@ class TestListingView(TestCase):
         user, _ = User.objects.get_or_create(username="r_d_james")
         self.client.force_login(user=user)
         response = self.client.post(
-            reverse("listing_bid", kwargs={"pk": 1}),
+            reverse("bid", kwargs={"pk": 1}),
             {"amount": 2},
             follow=True,
         )
@@ -375,7 +375,7 @@ class TestListingView(TestCase):
         user, _ = User.objects.get_or_create(username="r_d_james")
         self.client.force_login(user=user)
         response = self.client.post(
-            reverse("listing_comment", kwargs={"pk": 1}),
+            reverse("comment", kwargs={"pk": 1}),
             {"content": "test_comment"},
             follow=True,
         )

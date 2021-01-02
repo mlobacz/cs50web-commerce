@@ -31,19 +31,29 @@ class Listing(models.Model):
     image_url = models.URLField(blank=True)
     category = models.CharField(
         max_length=16,
-        choices = CATEGORY,
-        default = CATEGORY.other,
+        choices=CATEGORY,
+        default=CATEGORY.other,
+    )
+    active = models.BooleanField(default=True)
+    winner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        on_delete=models.SET("deleted user"),
+        related_name="won",
     )
 
     def __str__(self):
-        return f"{self.id}: \"{self.title}\", created at {self.date_created}."
+        return f'{self.id}: "{self.title}", created at {self.date_created}.'
 
 
 class Comment(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     content = models.TextField()
     author = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="comments"
+        settings.AUTH_USER_MODEL,
+        null=True,
+        on_delete=models.SET("deteleted user"),
+        related_name="comments",
     )
     listing = models.ForeignKey(
         Listing, on_delete=models.CASCADE, related_name="comments"
@@ -66,7 +76,9 @@ class Bid(models.Model):
 
 
 class Watchlist(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="watchlist")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="watchlist"
+    )
     listing = models.ManyToManyField(Listing)
 
     def __str__(self):

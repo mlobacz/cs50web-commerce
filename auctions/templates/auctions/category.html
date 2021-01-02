@@ -8,6 +8,7 @@
             <th>Description</th>
             <th>Price</th>
             <th>Image</th>
+            <th>Category</th>
             <th>Created</th>
         </tr>
     </thead>
@@ -22,6 +23,7 @@
             <td>{{ listing.description }}</td>
             <td>{{ listing.price|floatformat:2 }}</td>
             <td>{{ listing.image_url }}</td>
+            <td>{{ listing.category_name }}</td>
             <td>{{ listing.date_created }}</td>
         </tr>
         {% endfor %}

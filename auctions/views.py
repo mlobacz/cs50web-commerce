@@ -46,9 +46,11 @@ class ListingView(DetailView):
 
     def _get_listing(self):
         listing = self.get_object()
+        category_name = Listing.CATEGORY.__getitem__(listing.category)
         listing.price = (
             listing.bids.aggregate(Max("amount"))["amount__max"] or listing.starting_bid
         )
+        listing.category_name = category_name
         return listing
 
     def get_context_data(self, **kwargs):
@@ -60,10 +62,14 @@ class ListingView(DetailView):
             else None
         )
         context["bid_form"] = BidForm() if self.request.user.is_authenticated else None
-        context["comments"] = Comment.objects.filter(listing=listing)
         context["comment_form"] = (
             CommentForm() if self.request.user.is_authenticated else None
         )
+        context["comments"] = Comment.objects.filter(listing=listing)
+        context["owner"] = bool(
+            self.request.user.is_authenticated and (self.request.user == listing.owner)
+        )
+        context["winner"] = bool(self.request.user == listing.winner)
         context["listing"] = listing
         return context
 
@@ -123,9 +129,14 @@ class CommentFormView(FormView):
 
 def index(request):
     """Sets each listing price to the highest bid or, if there are no bids, to the starting one."""
-    listings = Listing.objects.annotate(highest_bid=Max("bids__amount"))
+    listings = Listing.objects.filter(active=True).annotate(
+        highest_bid=Max("bids__amount")
+    )
+
     for listing in listings:
         listing.price = listing.highest_bid or listing.starting_bid
+        category_name = Listing.CATEGORY.__getitem__(listing.category)
+        listing.category_name = category_name
     return render(request, "auctions/index.html", {"listings": listings})
 
 
@@ -232,9 +243,34 @@ def watchlist_view(request):
     watchlist = Listing.objects.filter(watchlist__user=request.user).annotate(
         highest_bid=Max("bids__amount")
     )
+
     for listing in watchlist:
         listing.price = listing.highest_bid or listing.starting_bid
+        category_name = Listing.CATEGORY.__getitem__(listing.category)
+        listing.category_name = category_name
+
     return render(request, "auctions/watchlist.html", {"watchlist": watchlist})
+
+
+@login_required
+def close(request, pk):
+    """Updates the active field to False, sets the winner highest bidder if exists."""
+    try:
+        auction_winner = Bid.objects.filter(listing=pk).order_by("-amount")[0].bidder
+    except IndexError:
+        Listing.objects.filter(pk=pk).update(active=False)
+        messages.add_message(
+            request, messages.WARNING, "Auction closed, there were no bids."
+        )
+        return redirect("listing", pk=pk)
+
+    Listing.objects.filter(pk=pk).update(active=False, winner=auction_winner)
+    messages.add_message(
+        request,
+        messages.SUCCESS,
+        f"Auction closed, winner is: {auction_winner.username}",
+    )
+    return redirect("listing", pk=pk)
 
 
 def categories_view(request):
@@ -246,8 +282,14 @@ def categories_view(request):
 
 def category(request, category_name):
     """Show listings in the particular category"""
-    listings = Listing.objects.filter(category=category_name)
-    category_name = Listing.CATEGORY.__getitem__(category_name)
+    listings = Listing.objects.filter(active=True, category=category_name).annotate(
+        highest_bid=Max("bids__amount")
+    )
+    # TODO: move adding those attributes to separate function for each of the views
+    for listing in listings:
+        listing.price = listing.highest_bid or listing.starting_bid
+        listing.category_name = Listing.CATEGORY.__getitem__(listing.category)
+
     return render(
         request,
         "auctions/category.html",
