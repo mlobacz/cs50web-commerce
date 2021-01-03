@@ -1,38 +1,42 @@
-{% extends "auctions/layout.html" %} 
-{% block body %}
+{% extends "auctions/layout.html" %} {% block body %}
 
 <h2>Your watchlist</h2>
 {% if watchlist %}
-    <table class="table table-hover">
-        <thead>
-            <tr>
-                <th>Owner</th>
-                <th>Title</th>
-                <th>Description</th>
-                <th>Price</th>
-                <th>Image</th>
-                <th>Category</th>
-                <th>Created</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for listing in watchlist %}
+<table class="table table-hover table-striped table-bordered">
+    <tbody>
+        {% for listing in watchlist%}
+        <div>
             <tr
                 class="clickable"
                 onclick="window.location='{% url 'listing' listing.pk %}'"
             >
-                <td>{{ listing.owner.username }}</td>
-                <td>{{ listing.title }}</td>
-                <td>{{ listing.description }}</td>
-                <td>{{ listing.price|floatformat:2 }}</td>
-                <td>{{ listing.image_url }}</td>
-                <td>{{ listing.category }}</td>
-                <td>{{ listing.date_created }}</td>
+                <td class="img_cell">
+                    <img
+                        src="{{ listing.image_url }}"
+                        alt="Listing Image"
+                    />
+                </td>
+                <td class="description_cell">
+                    <h3 class="l_title">{{ listing.title }}</h3>
+                    <h5 class="l_price">
+                        Price: {{ listing.price|floatformat:2 }}
+                    </h5>
+                    <p class="l_description">{{ listing.description }}</p>
+                    <p class="l_category">
+                        Category:
+                        <a href="{% url 'category' listing.category %}"
+                            >{{ listing.category_name }}</a
+                        >
+                    </p>
+                    <p class="l_created">
+                        <small>Posted: {{ listing.date_created }}</small>
+                    </p>
+                </td>
             </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+        </div>
+        {% endfor %}
+    </tbody>
+</table>
 {% else %}
-    <p>Your watchlist is empty.</p>
-{% endif %}
-{% endblock %}
+<p>Your watchlist is empty.</p>
+{% endif %} {% endblock %}

@@ -1,80 +1,68 @@
-{% extends "auctions/layout.html" %} 
-{% block body %}
-{% load crispy_forms_tags %}
-
-<h2>{{ listing.title }}</h2>
-{% if messages %}
+{% extends "auctions/layout.html" %} {% block body %} 
+{% load crispy_forms_tags %} {% if messages %}
 <div>
     {% for message in messages %}
     <div class="alert {{ message.tags }}">{{ message }}</div>
     {% endfor %}
 </div>
 {% endif %}
-{% if user.is_authenticated %}
-    {% if watched %}
-        <a href="{% url 'unwatch' listing.pk %}" role="button" class="btn btn-secondary btn-sm"
-            >unwatch</a
-        >
-        {% else %}
-        <a href="{% url 'watch' listing.pk %}" role="button" class="btn btn-secondary btn-sm"
-            >watch</a
-        >
-    {% endif %}
-{% endif %}
+<h2>
+    {{ listing.title }} {% if user.is_authenticated %} {% if watched %}
+    <a
+        href="{% url 'unwatch' listing.pk %}"
+        role="button"
+        class="btn btn-secondary btn-sm"
+        >unwatch</a
+    >
+    {% else %}
+    <a
+        href="{% url 'watch' listing.pk %}"
+        role="button"
+        class="btn btn-secondary btn-sm"
+        >watch</a
+    >
+    {% endif %} {% endif %}
+</h2>
 {% if winner %}
 <p>Congratulation, you won this auction!</p>
 {% endif %}
-<table class="table">
-    <thead>
-        <tr>
-            <th>Owner</th>
-            <th>Title</th>
-            <th>Description</th>
-            <th>Price</th>
-            <th>Image</th>
-            <th>Category</th>
-            <th>Created</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td>{{ listing.owner.username }}</td>
-            <td>{{ listing.title }}</td>
-            <td>{{ listing.description }}</td>
-            <td>{{ listing.price|floatformat:2 }}</td>
-            <td>{{ listing.image_url }}</td>
-            <td>{{ listing.category_name }}</td>
-            <td>{{ listing.date_created }}</td>
-        </tr>
-    </tbody>
-</table>
+<div class="l_img">
+    <img src="{{ listing.image_url }}" alt="Listing Image" />
+</div>
+<div class="l_details">
+<h5 class="l_price">Price: {{ listing.price|floatformat:2 }}</h5>
+<p class="l_description">{{ listing.description }}</p>
+<p class="l_category">
+    Category:
+    <a href="{% url 'category' listing.category %}"
+        >{{ listing.category_name }}</a
+    >
+</p>
+<p class="l_created">
+    <small>Posted: {{ listing.date_created }}</small>
+</p>
+</div>
 {% if bid_form %}
 <form action="{% url 'bid' listing.pk %}" method="POST">
-    {% csrf_token %} 
-    {{ bid_form|crispy }}
+    {% csrf_token %} {{ bid_form|crispy }}
     <input type="submit" class="btn btn-primary" value="Place bid" />
 </form>
-{% endif %}
-
-{% if comments %}
+{% endif %} {% if comments %} 
+<div class="cmnts">
+    <h4>Comments: </h4>
 {% for comment in comments %}
 <p>{{ comment.content }}</p>
-{% endfor %}
-{% endif %}
-
-{% if comment_form %}
+{% endfor %} {% endif %} {% if comment_form %}
 <form action="{% url 'comment' listing.pk %}" method="POST">
-    {% csrf_token %} 
-    {{ comment_form|crispy }}
+    {% csrf_token %} {{ comment_form|crispy }}
     <input type="submit" class="btn btn-primary" value="Comment" />
 </form>
-{% endif %}
-
-{% if owner and listing.active %}
-<a href="{% url 'close' listing.pk %}" role="button" class="btn btn-secondary btn-sm"
+</div>
+{% endif %} {% if owner and listing.active %}
+<a
+    href="{% url 'close' listing.pk %}"
+    role="button"
+    class="btn btn-secondary btn-sm"
     >Close</a
 >
-{% endif %}
-
-
-{% endblock %}
+{% endif %} {% endblock %}

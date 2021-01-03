@@ -1,3 +1,20 @@
 body {
     padding: 10px;
 }
+
+img {
+    width: 100%;
+    height: auto;
+}
+
+.img_cell {
+    width: 25%;
+}
+
+.list-group {
+    width: 25%;
+}
+
+.l_img {
+    max-width: 500px;
+}

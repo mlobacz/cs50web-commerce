@@ -270,16 +270,16 @@ def categories_view(request):
     )
 
 
-def category(request, category_name):
+def category(request, category):
     """Show listings in the particular category"""
-    listings = Listing.objects.filter(active=True, category=category_name).annotate(
+    listings = Listing.objects.filter(active=True, category=category).annotate(
         highest_bid=Max("bids__amount")
     )
     listings = _add_listing_display_attributes(listings)
     return render(
         request,
         "auctions/category.html",
-        {"category_name": category_name, "listings": listings},
+        {"category_name": Listing.CATEGORY.__getitem__(category), "listings": listings},
     )
 
 

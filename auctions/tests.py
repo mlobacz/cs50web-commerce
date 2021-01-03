@@ -553,10 +553,14 @@ class TestCategories(TestCase):
             category="books",
         )
         response = self.client.get(
-            reverse("category", kwargs={"category_name": "music"})
+            reverse("category", kwargs={"category": "music"})
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["listings"].count(), 2)
         self.assertEqual(
             response.context["listings"][0].category_name, "Music & Instruments"
         )
+        self.assertEqual(
+        response.context["category_name"], "Music & Instruments"
+        )
+

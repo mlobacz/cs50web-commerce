@@ -1,15 +1,11 @@
 {% extends "auctions/layout.html" %} {% block body %}
 <h2>Categories</h2>
-<table class="table table-hover">
-    <tbody>
-        {% for category in categories %}
-        <tr
-            class="clickable"
-            onclick="window.location='{% url 'category' category.0 %}'"
-        >
-            <td>{{ category.1 }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-{% endblock %}
+{% for category in categories %}
+<div class="list-group">
+    <a
+        href="{% url 'category' category.0 %}"
+        class="list-group-item list-group-item-action"
+        >{{ category.1 }}</a
+    >
+</div>
+{% endfor %} {% endblock %}
