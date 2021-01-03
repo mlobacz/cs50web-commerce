@@ -2,7 +2,7 @@ from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
-from django.db.models import Max
+from django.db.models import Max, QuerySet
 from django.forms import ModelForm
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
@@ -46,11 +46,10 @@ class ListingView(DetailView):
 
     def _get_listing(self):
         listing = self.get_object()
-        category_name = Listing.CATEGORY.__getitem__(listing.category)
         listing.price = (
             listing.bids.aggregate(Max("amount"))["amount__max"] or listing.starting_bid
         )
-        listing.category_name = category_name
+        listing.category_name = Listing.CATEGORY.__getitem__(listing.category)
         return listing
 
     def get_context_data(self, **kwargs):
@@ -132,11 +131,7 @@ def index(request):
     listings = Listing.objects.filter(active=True).annotate(
         highest_bid=Max("bids__amount")
     )
-
-    for listing in listings:
-        listing.price = listing.highest_bid or listing.starting_bid
-        category_name = Listing.CATEGORY.__getitem__(listing.category)
-        listing.category_name = category_name
+    listings = _add_listing_display_attributes(listings)
     return render(request, "auctions/index.html", {"listings": listings})
 
 
@@ -243,13 +238,8 @@ def watchlist_view(request):
     watchlist = Listing.objects.filter(watchlist__user=request.user).annotate(
         highest_bid=Max("bids__amount")
     )
-
-    for listing in watchlist:
-        listing.price = listing.highest_bid or listing.starting_bid
-        category_name = Listing.CATEGORY.__getitem__(listing.category)
-        listing.category_name = category_name
-
-    return render(request, "auctions/watchlist.html", {"watchlist": watchlist})
+    listings = _add_listing_display_attributes(watchlist)
+    return render(request, "auctions/watchlist.html", {"watchlist": listings})
 
 
 @login_required
@@ -285,13 +275,19 @@ def category(request, category_name):
     listings = Listing.objects.filter(active=True, category=category_name).annotate(
         highest_bid=Max("bids__amount")
     )
-    # TODO: move adding those attributes to separate function for each of the views
-    for listing in listings:
-        listing.price = listing.highest_bid or listing.starting_bid
-        listing.category_name = Listing.CATEGORY.__getitem__(listing.category)
-
+    listings = _add_listing_display_attributes(listings)
     return render(
         request,
         "auctions/category.html",
         {"category_name": category_name, "listings": listings},
     )
+
+
+def _add_listing_display_attributes(listings: QuerySet) -> QuerySet:
+    """Adds dynamically calculated attributes (price, category_name) to each listing."""
+
+    for listing in listings:
+        listing.price = listing.highest_bid or listing.starting_bid
+        listing.category_name = Listing.CATEGORY.__getitem__(listing.category)
+
+    return listings

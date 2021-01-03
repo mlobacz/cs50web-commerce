@@ -514,6 +514,8 @@ class TestCategories(TestCase):
     """
     Tests for categories related functionalities:
         List of categories names is returned from categories view.
+        Listings with given category are returned to category details.
+        User representation of the category is rendered.
     """
 
     def test_categories_list(self):
@@ -524,7 +526,10 @@ class TestCategories(TestCase):
         self.assertEqual(response.context["categories"], categories)
 
     def test_category_listings(self):
-        """Listings with given category are returned to category details."""
+        """
+        Listings with given category are returned to category details
+        user representation of the category is returned.
+        """
         user, _ = User.objects.get_or_create(username="d_bowie")
         Listing.objects.create(
             owner=user,
@@ -552,3 +557,6 @@ class TestCategories(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["listings"].count(), 2)
+        self.assertEqual(
+            response.context["listings"][0].category_name, "Music & Instruments"
+        )
