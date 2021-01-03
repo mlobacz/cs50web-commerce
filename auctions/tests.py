@@ -226,6 +226,12 @@ class TestListingView(TestCase):
         User can make a bid.
         Error message is flashed on a bid smaller or equal to the highest bid.
         Error message is flashed on a bid smaller than the starting price.
+        Comment form is returned as "None" for the not authenticated user.
+        Instance of CommentForm is returned for the authenticated user.
+        User can add a comment.
+        User is not the owner of the listing.
+        User is owner of the listing.
+        Owner of the listing can close it.
     """
 
     def setUp(self):
@@ -352,26 +358,20 @@ class TestListingView(TestCase):
         self.assertEqual(response.context["listing"].price, Decimal("100.46"))
 
     def test_no_comment_form_for_not_authenticated_user(self):
-        """
-        Comment form is returned as "None" for the not authenticated user.
-        """
+        """Comment form is returned as "None" for the not authenticated user."""
         response = self.client.get(reverse("listing", kwargs={"pk": 1}))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["comment_form"], None)
 
     def test_comment_form_for_authenticated_user(self):
-        """
-        Instance of CommentForm is returned for the authenticated user.
-        """
+        """Instance of CommentForm is returned for the authenticated user."""
         self.client.force_login(user=User.objects.get(username="d_bowie"))
         response = self.client.get(reverse("listing", kwargs={"pk": 1}))
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response.context["comment_form"], CommentForm)
 
     def test_user_can_add_comment(self):
-        """
-        User can add a comment
-        """
+        """User can add a comment."""
         user, _ = User.objects.get_or_create(username="r_d_james")
         self.client.force_login(user=user)
         response = self.client.post(
@@ -382,6 +382,54 @@ class TestListingView(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["comments"].count(), 1)
         self.assertEqual(response.context["comments"][0].content, "test_comment")
+
+    def test_user_is_not_owner(self):
+        """Non-creator is not the owner of the listing."""
+        user, _ = User.objects.get_or_create(username="r_d_james")
+        self.client.force_login(user=user)
+        response = self.client.get(reverse("listing", kwargs={"pk": 1}))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["owner"], False)
+
+    def test_user_is_owner(self):
+        """Creator is the owner of the listing."""
+        self.client.force_login(user=User.objects.get(username="d_bowie"))
+        response = self.client.get(reverse("listing", kwargs={"pk": 1}))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["owner"], True)
+
+    def test_owner_of_the_listing_wo_bids_can_close_it(self):
+        """Owner of the listing can close it, there is no bids and therefore winner."""
+        self.client.force_login(user=User.objects.get(username="d_bowie"))
+        response = self.client.get(reverse("close", kwargs={"pk": 1}), follow=True)
+        listing = Listing.objects.get(pk=1)
+        try:
+            message = list(response.context.get("messages"))[0]
+        except IndexError as error:
+            raise AssertionError("No message was passed to the response.") from error
+        self.assertEqual(message.tags, "alert-warning")
+        self.assertEqual(message.message, "Auction closed, there were no bids.")
+        self.assertEqual(listing.active, False)
+        self.assertEqual(listing.winner, None)
+
+    def test_owner_of_the_listing_w_bids_can_close_it(self):
+        """Owner of the listing can close it, highest bidder is the winner."""
+        self.client.force_login(user=User.objects.get(username="d_bowie"))
+        open_listing = Listing.objects.get(pk=1)
+        user_lower_bidder, _ = User.objects.get_or_create(username="lower_bidder")
+        user_higher_bidder, _ = User.objects.get_or_create(username="higher_bidder")
+        open_listing.bids.create(amount=200.32, bidder=user_lower_bidder)
+        open_listing.bids.create(amount=400.32, bidder=user_higher_bidder)
+        response = self.client.get(reverse("close", kwargs={"pk": 1}), follow=True)
+        closed_listing = Listing.objects.get(pk=1)
+        try:
+            message = list(response.context.get("messages"))[0]
+        except IndexError as error:
+            raise AssertionError("No message was passed to the response.") from error
+        self.assertEqual(message.tags, "alert-success")
+        self.assertEqual(message.message, "Auction closed, winner is: higher_bidder")
+        self.assertEqual(closed_listing.active, False)
+        self.assertEqual(closed_listing.winner.username, "higher_bidder")
 
 
 class TestWatchlist(TestCase):
