@@ -226,6 +226,7 @@ class TestListingView(TestCase):
         User can make a bid.
         Error message is flashed on a bid smaller or equal to the highest bid.
         Error message is flashed on a bid smaller than the starting price.
+        Number of bids on current listing is passed with the response.
         Comment form is returned as "None" for the not authenticated user.
         Instance of CommentForm is returned for the authenticated user.
         User can add a comment.
