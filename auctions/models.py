@@ -76,6 +76,7 @@ class Bid(models.Model):
 
 
 class Watchlist(models.Model):
+    # inspired by https://stackoverflow.com/questions/63403309/watchlist-system-on-django
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="watchlist"
     )

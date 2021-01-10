@@ -7,14 +7,18 @@ img {
     height: auto;
 }
 
-.img_cell {
-    width: 25%;
+.list-group {
+    display: inline-block;
 }
 
-.list-group {
+.img_cell {
     width: 25%;
 }
 
 .l_img {
     max-width: 500px;
+}
+
+.asteriskField {
+    display: none;
 }

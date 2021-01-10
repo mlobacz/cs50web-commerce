@@ -3,7 +3,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
 from django.db.models import Max, QuerySet
-from django.forms import ModelForm
+from django.forms import ModelForm, Textarea
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -28,6 +28,9 @@ class BidForm(ModelForm):
     class Meta:
         model = Bid
         fields = ["amount"]
+        labels = {
+            "amount": "Your bid: "
+        }
 
 
 class CommentForm(ModelForm):
@@ -36,6 +39,12 @@ class CommentForm(ModelForm):
     class Meta:
         model = Comment
         fields = ["content"]
+        labels = {
+            "content": "New comment: "
+        }
+        widgets = {
+            "content": Textarea(attrs={"rows": 3}),
+        }
 
 
 class ListingView(DetailView):
@@ -61,10 +70,11 @@ class ListingView(DetailView):
             else None
         )
         context["bid_form"] = BidForm() if self.request.user.is_authenticated else None
+        context["bids"] = listing.bids.count()
         context["comment_form"] = (
             CommentForm() if self.request.user.is_authenticated else None
         )
-        context["comments"] = Comment.objects.filter(listing=listing)
+        context["comments"] = Comment.objects.filter(listing=listing).order_by('date_created')
         context["owner"] = bool(
             self.request.user.is_authenticated and (self.request.user == listing.owner)
         )
@@ -206,7 +216,10 @@ def create(request):
 
 @login_required
 def watch(request, pk):
-    """Add listing to watchlist."""
+    """
+    Add listing to watchlist.
+    Inspired by: https://stackoverflow.com/questions/63403309/watchlist-system-on-django
+    """
     listing_to_watch = get_object_or_404(Listing, pk=pk)
 
     if Watchlist.objects.filter(user=request.user, listing=pk).exists():

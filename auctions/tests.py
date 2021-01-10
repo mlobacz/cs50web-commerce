@@ -357,6 +357,18 @@ class TestListingView(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["listing"].price, Decimal("100.46"))
 
+    def test_number_of_bids(self):
+        """
+        Number of bids on current listing is passed with the response.
+        """
+        user, _ = User.objects.get_or_create(username="r_d_james")
+        listing_1 = Listing.objects.get(id=1)
+        listing_1.bids.create(amount=200.32, bidder=user)
+        listing_1.bids.create(amount=251.32, bidder=user)
+        response = self.client.get(reverse("listing", kwargs={"pk": 1}))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["bids"], 2)
+        
     def test_no_comment_form_for_not_authenticated_user(self):
         """Comment form is returned as "None" for the not authenticated user."""
         response = self.client.get(reverse("listing", kwargs={"pk": 1}))
