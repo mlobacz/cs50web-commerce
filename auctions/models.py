@@ -37,6 +37,7 @@ class Listing(models.Model):
     active = models.BooleanField(default=True)
     winner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
+        blank=True,
         null=True,
         on_delete=models.SET("deleted user"),
         related_name="won",
