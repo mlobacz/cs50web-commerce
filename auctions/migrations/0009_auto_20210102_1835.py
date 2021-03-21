@@ -7,18 +7,28 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('auctions', '0008_listing_active'),
+        ("auctions", "0008_listing_active"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='listing',
-            name='winner',
-            field=models.ForeignKey(null=True, on_delete=models.SET('deleted_user'), related_name='won', to=settings.AUTH_USER_MODEL),
+            model_name="listing",
+            name="winner",
+            field=models.ForeignKey(
+                null=True,
+                on_delete=models.SET("deleted_user"),
+                related_name="won",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AlterField(
-            model_name='comment',
-            name='author',
-            field=models.ForeignKey(null=True, on_delete=models.SET('deteleted_user'), related_name='comments', to=settings.AUTH_USER_MODEL),
+            model_name="comment",
+            name="author",
+            field=models.ForeignKey(
+                null=True,
+                on_delete=models.SET("deteleted_user"),
+                related_name="comments",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
     ]

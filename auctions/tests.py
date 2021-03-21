@@ -369,7 +369,7 @@ class TestListingView(TestCase):
         response = self.client.get(reverse("listing", kwargs={"pk": 1}))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["bids"], 2)
-        
+
     def test_no_comment_form_for_not_authenticated_user(self):
         """Comment form is returned as "None" for the not authenticated user."""
         response = self.client.get(reverse("listing", kwargs={"pk": 1}))
@@ -565,15 +565,10 @@ class TestCategories(TestCase):
             starting_bid=21.37,
             category="books",
         )
-        response = self.client.get(
-            reverse("category", kwargs={"category": "music"})
-        )
+        response = self.client.get(reverse("category", kwargs={"category": "music"}))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["listings"].count(), 2)
         self.assertEqual(
             response.context["listings"][0].category_name, "Music & Instruments"
         )
-        self.assertEqual(
-        response.context["category_name"], "Music & Instruments"
-        )
-
+        self.assertEqual(response.context["category_name"], "Music & Instruments")

@@ -1,0 +1,9 @@
+-c requirements.txt
+pytest
+pytest-cov
+pytest-django
+pylint
+pylint-django
+black
+mypy
+pre-commit

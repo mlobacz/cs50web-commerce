@@ -8,18 +8,22 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('auctions', '0005_auto_20201220_1857'),
+        ("auctions", "0005_auto_20201220_1857"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='watchlist',
-            name='listing',
-            field=models.ManyToManyField(to='auctions.Listing'),
+            model_name="watchlist",
+            name="listing",
+            field=models.ManyToManyField(to="auctions.Listing"),
         ),
         migrations.AlterField(
-            model_name='watchlist',
-            name='user',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='watchlist', to=settings.AUTH_USER_MODEL),
+            model_name="watchlist",
+            name="user",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="watchlist",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
     ]

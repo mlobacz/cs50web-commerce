@@ -28,9 +28,7 @@ class BidForm(ModelForm):
     class Meta:
         model = Bid
         fields = ["amount"]
-        labels = {
-            "amount": "Your bid: "
-        }
+        labels = {"amount": "Your bid: "}
 
 
 class CommentForm(ModelForm):
@@ -39,9 +37,7 @@ class CommentForm(ModelForm):
     class Meta:
         model = Comment
         fields = ["content"]
-        labels = {
-            "content": "New comment: "
-        }
+        labels = {"content": "New comment: "}
         widgets = {
             "content": Textarea(attrs={"rows": 3}),
         }
@@ -74,7 +70,9 @@ class ListingView(DetailView):
         context["comment_form"] = (
             CommentForm() if self.request.user.is_authenticated else None
         )
-        context["comments"] = Comment.objects.filter(listing=listing).order_by('date_created')
+        context["comments"] = Comment.objects.filter(listing=listing).order_by(
+            "date_created"
+        )
         context["owner"] = bool(
             self.request.user.is_authenticated and (self.request.user == listing.owner)
         )
