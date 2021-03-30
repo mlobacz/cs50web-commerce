@@ -155,16 +155,14 @@ def login_view(request):
         if user is not None:
             login(request, user)
             return HttpResponseRedirect(reverse("index"))
-        else:
-            messages.add_message(
-                request, messages.ERROR, "Invalid username and/or password."
-            )
-            return render(
-                request,
-                "auctions/login.html",
-            )
-    else:
-        return render(request, "auctions/login.html")
+        messages.add_message(
+            request, messages.ERROR, "Invalid username and/or password."
+        )
+        return render(
+            request,
+            "auctions/login.html",
+        )
+    return render(request, "auctions/login.html")
 
 
 @login_required
@@ -194,8 +192,7 @@ def register(request):
             return render(request, "auctions/register.html")
         login(request, user)
         return HttpResponseRedirect(reverse("index"))
-    else:
-        return render(request, "auctions/register.html")
+    return render(request, "auctions/register.html")
 
 
 @login_required
@@ -213,7 +210,7 @@ def create(request):
 
 
 @login_required
-def watch(request, pk):
+def watch(request, pk):  # pylint: disable = C0103
     """
     Add listing to watchlist.
     Inspired by: https://stackoverflow.com/questions/63403309/watchlist-system-on-django
@@ -234,7 +231,7 @@ def watch(request, pk):
 
 
 @login_required
-def unwatch(request, pk):
+def unwatch(request, pk):  # pylint: disable = C0103
     """Remove listing from watchlist."""
     listing_to_unwatch = get_object_or_404(Listing, pk=pk)
     watchlist = Watchlist.objects.get(user=request.user)
@@ -254,7 +251,7 @@ def watchlist_view(request):
 
 
 @login_required
-def close(request, pk):
+def close(request, pk):  # pylint: disable = C0103
     """Updates the active field to False, sets the winner highest bidder if exists."""
     try:
         auction_winner = Bid.objects.filter(listing=pk).order_by("-amount")[0].bidder
@@ -281,7 +278,7 @@ def categories_view(request):
     )
 
 
-def category(request, category):
+def category_listings(request, category):
     """Show listings in the particular category"""
     listings = Listing.objects.filter(active=True, category=category).annotate(
         highest_bid=Max("bids__amount")
