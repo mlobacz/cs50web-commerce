@@ -1,7 +1,5 @@
 -c requirements.txt
-pytest
-pytest-cov
-pytest-django
+coverage
 pylint
 pylint-django
 black
