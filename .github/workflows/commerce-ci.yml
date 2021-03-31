@@ -21,3 +21,6 @@ jobs:
       - name: run django unit tests
         run : |
           python manage.py test
+      - name: run linting with pylint
+        run : |
+          pylint auctions

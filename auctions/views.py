@@ -1,3 +1,6 @@
+"""
+Auction app views.
+"""
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
@@ -144,14 +147,13 @@ def index(request):
 
 
 def login_view(request):
+    """Attempts to sign user in, redirects them to login page if unsuccessful."""
     if request.method == "POST":
 
-        # Attempt to sign user in
         username = request.POST["username"]
         password = request.POST["password"]
         user = authenticate(request, username=username, password=password)
 
-        # Check if authentication successful
         if user is not None:
             login(request, user)
             return HttpResponseRedirect(reverse("index"))
@@ -167,11 +169,13 @@ def login_view(request):
 
 @login_required
 def logout_view(request):
+    """Logs the user out"""
     logout(request)
     return HttpResponseRedirect(reverse("index"))
 
 
 def register(request):
+    """Creates a new user and logs them in."""
     if request.method == "POST":
         username = request.POST["username"]
         email = request.POST["email"]

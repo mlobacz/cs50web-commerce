@@ -1,3 +1,7 @@
+"""
+Auctions app test suite
+"""
+
 from decimal import Decimal
 
 from django.test import TestCase
@@ -532,7 +536,10 @@ class TestCategories(TestCase):
     """
 
     def test_categories_list(self):
-        """Full list of categories names (user represenation) is returned from the categories view."""
+        """
+        Full list of categories names (user represenation)
+        is returned from the categories view.
+        """
         categories = Listing.CATEGORY.__iter__
         response = self.client.get(reverse("categories"))
         self.assertEqual(response.status_code, 200)
