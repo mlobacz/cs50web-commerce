@@ -1,3 +1,6 @@
+"""
+Auctions app models module.
+"""
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.conf import settings
@@ -6,11 +9,19 @@ from model_utils import Choices
 
 
 class User(AbstractUser):
+    """
+    User class.
+    """
+
     def __str__(self):
         return f"{self.id}: {self.username}, {self.email}"
 
 
 class Listing(models.Model):
+    """
+    Listing model class.
+    """
+
     CATEGORY = Choices(
         ("books", _("Books")),
         ("electronics", _("Electronics")),
@@ -48,6 +59,10 @@ class Listing(models.Model):
 
 
 class Comment(models.Model):
+    """
+    Comment model class.
+    """
+
     date_created = models.DateTimeField(auto_now_add=True)
     content = models.TextField()
     author = models.ForeignKey(
@@ -65,6 +80,10 @@ class Comment(models.Model):
 
 
 class Bid(models.Model):
+    """
+    Bid model class.
+    """
+
     date_created = models.DateTimeField(auto_now_add=True)
     amount = models.DecimalField(max_digits=11, decimal_places=2)
     bidder = models.ForeignKey(
@@ -77,7 +96,12 @@ class Bid(models.Model):
 
 
 class Watchlist(models.Model):
-    # inspired by https://stackoverflow.com/questions/63403309/watchlist-system-on-django
+    """
+    Watchlist model class.
+
+    inspired by https://stackoverflow.com/questions/63403309/watchlist-system-on-django
+    """
+
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="watchlist"
     )

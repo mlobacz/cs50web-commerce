@@ -1,3 +1,6 @@
+"""
+Django Admin site module.
+"""
 from django.contrib import admin
 
 from .models import Bid, Comment, Listing, User, Watchlist
