@@ -24,3 +24,6 @@ jobs:
       - name: run linting with pylint
         run : |
           pylint auctions
+      - name : typing checks
+        run : |
+          mypy auctions
